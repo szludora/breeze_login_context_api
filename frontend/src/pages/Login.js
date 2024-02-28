@@ -1,18 +1,41 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import axios from "../api/axios";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState("");
+  const navigate = useNavigate();
+
+  let token = "";
+  const csrf = () =>
+    axios.get("/token").then((response) => {
+      console.log(response);
+      token = response.data;
+      console.log();
+    });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const adat = { email: email, password: password };
+
+    await csrf();
+    const adat = {
+      email: email,
+      password: password,
+      _token: token,
+    };
     try {
       await axios.post("/login", adat);
+      console.log("siker");
+      navigate("/");
     } catch (error) {
-      console.log(error);
+        console.log(error)
+      if (error.response.status === 422) {
+        setErrors(error.response.data.errors);
+      }
     }
   };
 
@@ -28,7 +51,11 @@ export default function Login() {
             setEmail(e.target.value);
           }}
         />
-        <Form.Text className="text-muted">A formátum nem megfelelő</Form.Text>
+        <Form.Text className="text-muted">
+          {errors.email && (
+            <span className="text-danger">{errors.email[0]}</span>
+          )}
+        </Form.Text>
       </Form.Group>
 
       <Form.Group className="mb-3" controlId="password">
@@ -41,7 +68,11 @@ export default function Login() {
             setPassword(e.target.value);
           }}
         />
-        <Form.Text className="text-muted">A formátum nem megfelelő</Form.Text>
+        <Form.Text className="text-muted">
+          {errors.password && (
+            <span className="text-danger">{errors.password[0]}</span>
+          )}
+        </Form.Text>
       </Form.Group>
 
       <Button variant="primary" type="submit">
